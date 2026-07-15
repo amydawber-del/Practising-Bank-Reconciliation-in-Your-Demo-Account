@@ -1,130 +1,102 @@
 <!DOCTYPE html>
-<html lang="en-GB">
+<html lang="en">
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
 <title>Practising Bank Reconciliation in Your Demo Account</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
-
-/* ==========================================================================
-   THEME TOKENS
-   ========================================================================== */
-:root {
-  --text--dark--50: #19191e;
-  --brand--black: #242326;
-  --text--dark--40: #4c4d57;
-  --text--dark--30: #777989;
-  --true-black: #000000;
-  --transparent: #fff0;
-  --card-light-grey: #f8f8f8;
-  --text--white--30: #979797;
-  --text--light--40: #b2b2b2;
-  --accent--blue--300: #527dff;
-  --accent-blue--200: #7a9cff;
-  --text--dark--20: #a8aabb;
-  --action-primary-blue: #2147f4;
-  --white: #ffffff;
-  --light-grey: #cccccc;
-  --text-dark-10: #dfe0ec;
-  --ui--underline--light-grey: #e5e5e5;
-  --success-green: #bde4b9;
-  --brand--yellow: #f1c238;
-  --brand-accent--mandarin-light: #f6be9d;
-  --accent-blue--100: #a3baff;
-  --brand-accent--dusty-red-light: #f9b4bc;
-  --brand--secondary--lightgreen: #beffd8;
-  --accent-blue--50: #b8caff;
-  --white-smoke: #fde8eb;
-  --nav-opacity: #ffffff0d;
-  --brand-accent--cream: #f5ede5;
-
-  /* Fixed layout regions inside the 1080x600 landscape canvas */
-  --canvas-w: 1080px;
-  --canvas-h: 600px;
-  --header-h: 60px;
-  --nav-h: 56px;
+:root{
+  --navy:#161B33;
+  --ink:#22273B;
+  --grey:#6B7280;
+  --grey-light:#9AA1B1;
+  --lavender:#EDEBFB;
+  --lavender-strong:#DCD6F7;
+  --blue-pale:#E7F1FC;
+  --blue-strong:#CFE3FA;
+  --warning-bg:#FBF2DE;
+  --warning-border:#E9CE93;
+  --white:#FFFFFF;
+  --border:#E7E8EF;
+  --shadow: 0 2px 10px rgba(22,27,51,0.06), 0 1px 2px rgba(22,27,51,0.04);
+  --radius: 18px;
+  --radius-sm: 12px;
+  --font: 'DM Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
 }
 
 * { box-sizing: border-box; }
 
+.ic { width: 14px; height: 14px; flex: none; display: block; }
+
 html, body {
-  margin: 0;
-  padding: 0;
   width: 100%;
   height: 100%;
-  overflow: hidden; /* never scroll the outer document, even when embedded */
-  background: var(--white);
-  font-family: Arial, "Helvetica Neue", Helvetica, sans-serif;
-  font-size: 14px;
-  line-height: 20px;
-  color: #333;
-  min-height: 100%;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  background: #F4F5FA;
+  font-family: var(--font);
   -webkit-font-smoothing: antialiased;
 }
 
-button { font-family: inherit; }
+/* Fixes a real bug: an element's `hidden` attribute can be silently
+   overridden by any author CSS rule that sets `display` on the same
+   element with equal specificity (e.g. `.state-screen{display:flex}`).
+   Toggling this explicit, !important class instead guarantees hidden
+   content actually stays hidden, regardless of what else targets it. */
+.hidden { display: none !important; }
 
-/* ==========================================================================
-   CANVAS — fixed 1080 x 600 landscape, never scrolls
-   ========================================================================== */
-.flip-canvas {
-  width: var(--canvas-w);
-  height: var(--canvas-h);
-  max-width: 100%;
-  max-height: 100%;
-  margin: 0 auto;
+#root {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/*
+ * The shell is the box Rocketlane actually sees (target 1080 x 600,
+ * landscape). Its size is decided by CSS alone — min() picks whichever
+ * of "full viewport width", "1080px", or "the width that 100vh would
+ * give at a 1080:600 ratio" is smallest, and aspect-ratio locks the
+ * shape to landscape no matter what. This does NOT depend on any JS
+ * running correctly, so it can't silently end up portrait.
+ * Inside it, .stage is a FIXED 1080x600 canvas that gets CSS-scaled
+ * (via JS + ResizeObserver, see below) to fit the shell — so every
+ * page is designed once, at one size, and just scales as a block.
+ */
+.flipbook-shell {
   position: relative;
-  overflow: hidden;
-  box-sizing: border-box;
+  width: min(100vw, 1080px, calc(100vh * 1.8));
+  aspect-ratio: 1080 / 600;
   background: var(--white);
+  border-radius: 20px;
+  overflow: hidden;
+  box-shadow: var(--shadow);
+}
+@media (max-width: 1080px), (max-height: 600px) {
+  .flipbook-shell { border-radius: 0; box-shadow: none; }
+}
+
+.stage {
+  position: absolute;
+  top: 0; left: 0;
+  width: 1080px;
+  height: 600px;
+  transform-origin: top left;
   display: flex;
   flex-direction: column;
 }
 
-/* ==========================================================================
-   HEADER
-   ========================================================================== */
-.fb-header {
-  flex: 0 0 var(--header-h);
-  height: var(--header-h);
-  box-sizing: border-box;
-  background: var(--brand--black);
-  color: var(--white);
-  display: flex;
-  align-items: center;
-  padding: 0 24px;
-  overflow: hidden;
-}
-
-.fb-header__title {
-  font-size: 19px;
-  font-weight: 700;
-  line-height: 1.25;
-  letter-spacing: 0.1px;
-}
-
-.fb-header__title-sub {
-  display: block;
-  font-size: 13px;
-  font-weight: 400;
-  color: var(--accent-blue--100);
-  margin-top: 2px;
-}
-
-/* ==========================================================================
-   PAGE VIEWPORT — the only area that changes between pages
-   ========================================================================== */
+/* ---------- Page stack ---------- */
 .page-viewport {
-  flex: 1 1 auto;
   position: relative;
-  overflow: hidden;
-  background: var(--white);
+  flex: 1 1 auto;
   min-height: 0;
-}
-
-.pages-root {
-  position: absolute;
-  inset: 0;
+  overflow: hidden;
 }
 
 .page {
@@ -132,1120 +104,806 @@ button { font-family: inherit; }
   inset: 0;
   display: flex;
   flex-direction: column;
+  padding: 30px 46px 12px;
   opacity: 0;
-  transform: translateX(24px);
-  transition: opacity 0.28s ease, transform 0.28s ease;
+  transform: translateX(28px);
+  transition: opacity 320ms ease, transform 320ms ease;
   pointer-events: none;
-  visibility: hidden;
 }
-
-.page.is-active {
+.page.active {
   opacity: 1;
   transform: translateX(0);
   pointer-events: auto;
-  visibility: visible;
 }
-
-.page.is-leaving-back {
-  transform: translateX(-24px);
-}
+.page.exit-left { transform: translateX(-28px); }
 
 @media (prefers-reduced-motion: reduce) {
-  .page {
-    transition: opacity 0.01ms linear !important;
-    transform: none !important;
-  }
+  .page { transition: opacity 160ms linear; transform: none !important; }
 }
 
-.page-inner {
-  box-sizing: border-box;
-  width: 100%;
-  height: 100%;
-  padding: 20px 44px 16px;
-  overflow: hidden; /* pagination guarantees fit; this is a safety net, not a strategy */
+/* ---------- Shared type ---------- */
+.eyebrow {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--grey-light);
+  margin: 0 0 6px;
+}
+h1.page-title {
+  font-size: 27px;
+  line-height: 1.15;
+  font-weight: 700;
+  color: var(--navy);
+  margin: 0 0 10px;
+}
+p.lede {
+  font-size: 14px;
+  line-height: 1.55;
+  color: var(--grey);
+  margin: 0 0 14px;
+}
+
+/* ---------- Cover page (landscape: copy centred, no client image) ---------- */
+.cover-flex { display: flex; height: 100%; align-items: center; }
+.cover-left { flex: 1; max-width: 640px; display: flex; flex-direction: column; }
+.cover-word { font-size: 13px; font-weight: 700; letter-spacing: 0.06em; color: var(--navy); }
+.cover-word span { color: #7C6FE0; }
+.cover-callout {
+  margin-top: 16px;
+  background: var(--blue-pale);
+  border-radius: var(--radius-sm);
+  padding: 12px 14px;
+  font-size: 13px;
+  color: var(--ink);
+  font-weight: 500;
+}
+.cover-pill-row { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 14px; }
+.cover-pill {
+  font-size: 12px;
+  font-weight: 700;
+  padding: 6px 13px;
+  border-radius: 999px;
+  background: var(--lavender);
+  color: var(--navy);
+}
+.cover-cta {
+  margin-top: 14px;
+  font-size: 12px;
+  color: var(--grey-light);
+}
+
+/* ---------- Guidance pages: eyebrow + title + a grid of field blocks,
+   using the extra landscape width. One guidance record's worth of content
+   per page, spilling onto a "Continued" page when it doesn't all fit. ---------- */
+.fields-grid {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px 24px;
+  align-content: start;
+  overflow: hidden;
+}
+.fields-grid.single-col { grid-template-columns: 1fr; }
+
+.field-block { min-width: 0; }
+.field-block .fk {
+  display: flex; align-items: center; gap: 6px;
+  font-weight: 700; color: var(--grey); font-size: 11px;
+  text-transform: uppercase; letter-spacing: 0.05em;
+  margin-bottom: 4px;
+}
+.field-block .fk .ic { width: 14px; height: 14px; color: var(--grey-light); }
+.field-block-body { font-size: 13.5px; line-height: 1.5; color: var(--ink); }
+.field-block-body p { margin: 0 0 6px; }
+.field-block-body p:last-child { margin-bottom: 0; }
+.field-block-body ol { margin: 0; padding-left: 18px; }
+.field-block-body ol li { margin-bottom: 4px; }
+.field-block-body ol li:last-child { margin-bottom: 0; }
+
+/* HOW is the practical, instructional field — made slightly more prominent
+   with the same tinted-callout treatment used for notes on the other guide. */
+.field-block.field-how {
+  grid-column: 1 / -1;
+  background: var(--lavender);
+  border-radius: var(--radius-sm);
+  padding: 12px 14px;
+}
+.field-block.field-how .fk { color: var(--navy); }
+.field-block.field-how .fk .ic { color: var(--navy); }
+.field-block.field-how .field-block-body { color: var(--ink); font-weight: 500; }
+
+/* ---------- Final page (landscape: copy left, closing right) ---------- */
+.final-flex { display: flex; gap: 40px; height: 100%; align-items: center; }
+.final-left { flex: 1.4; }
+.final-copy { font-size: 14px; color: var(--ink); line-height: 1.55; margin-bottom: 12px; }
+.final-note {
+  margin-top: 4px;
+  background: var(--warning-bg);
+  border: 1px solid var(--warning-border);
+  border-radius: var(--radius-sm);
+  padding: 12px 14px;
+  font-size: 13px;
+  color: #6B5518;
+  line-height: 1.5;
+}
+.final-right {
+  flex: 1;
   display: flex;
   flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  text-align: center;
+}
+.final-right .word { font-size: 15px; font-weight: 700; color: var(--navy); letter-spacing: 0.06em; }
+.restart-btn {
+  background: var(--lavender);
+  color: var(--navy);
+  border: none;
+  border-radius: 999px;
+  padding: 10px 20px;
+  font-family: var(--font);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.restart-btn:focus-visible { outline: 2px solid var(--navy); outline-offset: 2px; }
+
+/* ---------- Footer / nav ---------- */
+.footer {
+  flex: none;
+  padding: 10px 46px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  border-top: 1px solid var(--border);
+  background: var(--white);
+}
+.progress-track {
+  height: 4px;
+  border-radius: 999px;
+  background: var(--border);
+  overflow: hidden;
+}
+.progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg,#7C6FE0,#5A8DEE);
+  border-radius: 999px;
+  transition: width 250ms ease;
+}
+.nav-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+.nav-btn {
+  display: flex; align-items: center; gap: 6px;
+  background: var(--lavender);
+  color: var(--navy);
+  border: none;
+  border-radius: 999px;
+  padding: 9px 18px;
+  font-family: var(--font);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  min-width: 90px;
+  justify-content: center;
+}
+.nav-btn:disabled { opacity: 0.35; cursor: default; }
+.nav-btn:focus-visible { outline: 2px solid var(--navy); outline-offset: 2px; }
+.page-count {
+  font-size: 12px;
+  color: var(--grey-light);
+  font-weight: 600;
+  white-space: nowrap;
 }
 
-/* Pagination measures real .page-inner elements at runtime (see script.js),
-   so children must never flex-shrink below their content size — otherwise
-   flexbox would quietly compress overflowing content instead of reporting
-   it, and true overflow would never be detected. */
-.page-inner > * {
-  flex-shrink: 0;
+/* ---------- Loading / error ---------- */
+.state-screen {
+  position: absolute; inset: 0;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 14px; padding: 30px; text-align: center; background: var(--white);
+}
+.spinner {
+  width: 30px; height: 30px; border-radius: 999px;
+  border: 3px solid var(--lavender-strong);
+  border-top-color: var(--navy);
+  animation: spin 800ms linear infinite;
+}
+@media (prefers-reduced-motion: reduce) { .spinner { animation-duration: 1600ms; } }
+@keyframes spin { to { transform: rotate(360deg); } }
+.state-title { font-size: 15px; font-weight: 700; color: var(--navy); }
+.state-copy { font-size: 13px; color: var(--grey); line-height: 1.5; max-width: 420px; }
+.retry-btn {
+  background: var(--navy); color: #fff; border: none; border-radius: 999px;
+  padding: 10px 20px; font-family: var(--font); font-weight: 600; font-size: 13px; cursor: pointer;
+}
+.retry-btn:focus-visible { outline: 2px solid var(--navy); outline-offset: 3px; }
+
+/* Off-screen measuring rig — a sibling of .stage, NOT scaled, so
+   measurements are always taken at true 1:1 pixel size regardless
+   of how small the shell has been scaled down to fit the screen. */
+#measure-rig {
+  position: absolute;
+  visibility: hidden;
+  pointer-events: none;
+  left: -9999px;
+  top: 0;
 }
 
 .sr-only {
   position: absolute;
-  width: 1px;
-  height: 1px;
-  padding: 0;
-  margin: -1px;
+  width: 1px; height: 1px;
+  padding: 0; margin: -1px;
   overflow: hidden;
   clip: rect(0, 0, 0, 0);
   white-space: nowrap;
   border: 0;
 }
 
-/* ==========================================================================
-   SECTION HEADINGS (per guidance record)
-   ========================================================================== */
-.section-title {
-  font-size: 21px;
-  font-weight: 700;
-  color: var(--text--dark--50);
-  line-height: 1.28;
-  margin: 0 0 4px;
-}
-
-.section-continued {
-  display: inline-block;
-  font-size: 11.5px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  color: var(--action-primary-blue);
-  background: var(--accent-blue--50);
-  border-radius: 999px;
-  padding: 3px 10px;
-  margin-bottom: 10px;
-}
-
-.section-intro-space { margin-bottom: 12px; }
-
-/* ==========================================================================
-   CARDS
-   ========================================================================== */
-.card-grid {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 14px;
-  overflow: hidden;
-}
-
-.card-grid--two-col {
-  grid-template-columns: 1fr 1fr;
-}
-
-.card {
-  border-radius: 12px;
-  padding: 12px 14px;
-  background: var(--card-light-grey);
-  border: 1px solid var(--ui--underline--light-grey);
-  box-shadow: 0 1px 2px rgba(25, 25, 30, 0.04);
-  min-width: 0;
-}
-
-.card-grid--two-col .card { grid-column: span 1; }
-.card--span-full { grid-column: 1 / -1 !important; }
-
-.card__label {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 11px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.07em;
-  margin: 0 0 5px;
-}
-
-.card__label-dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  flex: 0 0 8px;
-}
-
-.card__body {
-  font-size: 14.5px;
-  line-height: 1.42;
-  color: var(--text--dark--40);
-}
-
-.card__body p { margin: 0 0 6px; }
-.card__body p:last-child { margin-bottom: 0; }
-
-.card__body ol {
-  margin: 0;
-  padding-left: 19px;
-}
-.card__body ol li {
-  margin-bottom: 5px;
-  padding-left: 2px;
-}
-.card__body ol li:last-child { margin-bottom: 0; }
-
-/* Accent colours per field, applied consistently across the guide */
-.card--who .card__label { color: #2147c9; }
-.card--who .card__label-dot { background: var(--accent--blue--300); }
-.card--who { border-top: 3px solid var(--accent--blue--300); }
-
-.card--what .card__label { color: #8a6a05; }
-.card--what .card__label-dot { background: var(--brand--yellow); }
-.card--what { border-top: 3px solid var(--brand--yellow); }
-
-.card--where .card__label { color: #a15a2e; }
-.card--where .card__label-dot { background: var(--brand-accent--mandarin-light); }
-.card--where { border-top: 3px solid var(--brand-accent--mandarin-light); }
-
-.card--when .card__label { color: #1e7a4c; }
-.card--when .card__label-dot { background: var(--brand--secondary--lightgreen); }
-.card--when { border-top: 3px solid var(--brand--secondary--lightgreen); }
-
-.card--why .card__label { color: #b23a53; }
-.card--why .card__label-dot { background: var(--brand-accent--dusty-red-light); }
-.card--why { border-top: 3px solid var(--brand-accent--dusty-red-light); }
-
-/* HOW is the practical, instructional card — made slightly more prominent */
-.card--how {
-  background: #eef2ff;
-  border: 1px solid var(--accent-blue--100);
-  border-top: 3px solid var(--action-primary-blue);
-}
-.card--how .card__label { color: var(--action-primary-blue); }
-.card--how .card__label-dot { background: var(--action-primary-blue); }
-.card--how .card__body { color: var(--text--dark--50); font-size: 14.5px; }
-
-/* Compact mode: used as a last-resort fallback if a single card can't fit
-   at normal size on its own page (kept within accessible size limits). */
-.page-inner--compact .section-title { font-size: 19px; }
-.page-inner--compact .card { padding: 10px 12px; }
-.page-inner--compact .card__body { font-size: 13.5px; line-height: 1.36; }
-.page-inner--compact .card__label { font-size: 10.5px; }
-
-/* ==========================================================================
-   COVER PAGE
-   ========================================================================== */
-.cover-page {
-  height: 100%;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: flex-start;
-  text-align: left;
-}
-
-.cover-page__eyebrow {
-  font-size: 12px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
-  color: var(--action-primary-blue);
-  background: var(--accent-blue--50);
-  padding: 5px 12px;
-  border-radius: 999px;
-  margin-bottom: 18px;
-}
-
-.cover-page__title {
-  font-size: 30px;
-  font-weight: 800;
-  line-height: 1.18;
-  color: var(--text--dark--50);
-  margin: 0 0 16px;
-}
-
-.cover-page__intro {
-  font-size: 15.5px;
-  line-height: 1.6;
-  color: var(--text--dark--40);
-  margin: 0 0 22px;
-  max-width: 46ch;
-}
-
-.cover-page__pill-row {
-  display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
-}
-
-.cover-page__pill {
-  font-size: 12px;
-  font-weight: 700;
-  padding: 7px 13px;
-  border-radius: 999px;
-  background: var(--card-light-grey);
-  border: 1px solid var(--ui--underline--light-grey);
-  color: var(--text--dark--40);
-}
-
-.cover-page__swatch {
-  width: 46px;
-  height: 6px;
-  border-radius: 4px;
-  margin-bottom: 22px;
-  background: linear-gradient(90deg, var(--action-primary-blue), var(--brand--secondary--lightgreen) 50%, var(--brand--yellow));
-}
-
-/* ==========================================================================
-   CLOSING PAGE
-   ========================================================================== */
-.closing-page {
-  height: 100%;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: flex-start;
-}
-
-.closing-page__title {
-  font-size: 24px;
-  font-weight: 800;
-  margin: 0 0 14px;
-  color: var(--text--dark--50);
-}
-
-.closing-page__body {
-  font-size: 15px;
-  line-height: 1.6;
-  color: var(--text--dark--40);
-  margin: 0 0 18px;
-  max-width: 46ch;
-}
-
-.closing-page__note {
-  border-radius: 12px;
-  padding: 14px 16px;
-  background: var(--white-smoke);
-  border: 1px solid var(--brand-accent--dusty-red-light);
-  font-size: 13.5px;
-  line-height: 1.5;
-  color: var(--text--dark--40);
-  max-width: 46ch;
-}
-
-/* ==========================================================================
-   NAVIGATION
-   ========================================================================== */
-.fb-nav {
-  flex: 0 0 var(--nav-h);
-  height: var(--nav-h);
-  box-sizing: border-box;
-  background: var(--brand--black);
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0 14px;
-  gap: 10px;
-}
-
-.nav-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  background: var(--nav-opacity);
-  color: var(--white);
-  border: 1px solid rgba(255, 255, 255, 0.16);
-  border-radius: 10px;
-  padding: 10px 14px;
-  min-height: 44px;
-  min-width: 76px;
-  font-size: 14px;
-  font-weight: 700;
-  cursor: pointer;
-  transition: background 0.15s ease, opacity 0.15s ease;
-}
-
-.nav-btn:hover:not(:disabled) { background: rgba(255, 255, 255, 0.14); }
-
-.nav-btn:disabled {
-  opacity: 0.35;
-  cursor: not-allowed;
-}
-
-.nav-btn:focus-visible {
-  outline: 3px solid var(--accent-blue--100);
-  outline-offset: 2px;
-}
-
-.fb-nav__progress {
-  flex: 1 1 auto;
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 6px;
-}
-
-.fb-nav__page-label {
-  font-size: 12px;
-  font-weight: 700;
-  color: var(--text-dark-10);
-  letter-spacing: 0.02em;
-}
-
-.fb-nav__track {
-  width: 100%;
-  max-width: 220px;
-  height: 5px;
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.14);
-  overflow: hidden;
-}
-
-.fb-nav__bar {
-  height: 100%;
-  width: 0%;
-  border-radius: 999px;
-  background: var(--accent-blue--200);
-  transition: width 0.25s ease;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .fb-nav__bar { transition: none; }
-}
-
-/* ==========================================================================
-   LOADING / ERROR STATES
-   ========================================================================== */
-.state-screen {
-  position: absolute;
-  inset: 0;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  text-align: center;
-  padding: 32px;
-  gap: 12px;
-  color: var(--text--dark--40);
-  font-size: 15px;
-}
-
-.spinner {
-  width: 34px;
-  height: 34px;
-  border-radius: 50%;
-  border: 3px solid var(--ui--underline--light-grey);
-  border-top-color: var(--action-primary-blue);
-  animation: spin 0.8s linear infinite;
-}
-
-@keyframes spin { to { transform: rotate(360deg); } }
-
-@media (prefers-reduced-motion: reduce) {
-  .spinner { animation-duration: 2.4s; }
-}
-
-.state-screen--error .state-screen__icon {
-  font-size: 30px;
-  margin: 0;
-}
-
-.state-screen__title {
-  font-size: 17px;
-  font-weight: 700;
-  color: var(--text--dark--50);
-  margin: 0;
-}
-
-.state-screen__detail {
-  font-size: 13.5px;
-  max-width: 42ch;
-  margin: 0;
-}
-
-.btn {
-  min-height: 44px;
-  padding: 10px 20px;
-  border-radius: 10px;
-  font-size: 14.5px;
-  font-weight: 700;
-  border: none;
-  cursor: pointer;
-}
-
-.btn--primary {
-  background: var(--action-primary-blue);
-  color: var(--white);
-}
-
-.btn--primary:hover { background: #1a39cf; }
-
-.btn:focus-visible {
-  outline: 3px solid var(--accent-blue--200);
-  outline-offset: 2px;
-}
-
-/* ==========================================================================
-   SMALL-VIEWPORT SAFETY (embedding frames that squash below 1080px)
-   ========================================================================== */
-@media (max-width: 1079px) {
-  .flip-canvas { width: 100%; }
-}
-
-
 </style>
 </head>
 <body>
+<div id="root">
+  <div class="flipbook-shell" id="shell" role="region" aria-roledescription="carousel" aria-label="Practising Bank Reconciliation in Your Demo Account guide">
+    <div class="stage" id="stage">
 
-  <div id="flip-canvas" class="flip-canvas">
+      <div class="page-viewport" id="viewport">
+        <!-- Loading state -->
+        <div class="state-screen" id="state-loading">
+          <div class="spinner" aria-hidden="true"></div>
+          <div class="state-title">Loading your bank reconciliation guide&hellip;</div>
+        </div>
 
-    <!-- HEADER -->
-    <header class="fb-header">
-      <div class="fb-header__title">Practising Bank Reconciliation<span class="fb-header__title-sub">in Your Demo Account</span></div>
-    </header>
+        <!-- Error state -->
+        <div class="state-screen hidden" id="state-error">
+          <div class="state-title">We couldn't load this guide</div>
+          <div class="state-copy" id="error-copy">Something went wrong while loading the latest guidance. Please try again in a moment.</div>
+          <button class="retry-btn" id="retry-btn" type="button">Retry</button>
+        </div>
 
-    <!-- PAGE VIEWPORT -->
-    <main id="page-viewport" class="page-viewport">
-
-      <!-- LOADING STATE -->
-      <div id="state-loading" class="state-screen" role="status">
-        <div class="spinner" aria-hidden="true"></div>
-        <p>Loading your guide&hellip;</p>
+        <!-- Pages get injected here once data has loaded -->
+        <div id="pages-host" aria-live="polite"></div>
       </div>
 
-      <!-- ERROR STATE -->
-      <div id="state-error" class="state-screen state-screen--error" hidden>
-        <p class="state-screen__icon" aria-hidden="true">&#9888;</p>
-        <p class="state-screen__title">We couldn&rsquo;t load this guide</p>
-        <p id="state-error-detail" class="state-screen__detail">Please check your connection and try again.</p>
-        <button id="retry-button" class="btn btn--primary" type="button">Try again</button>
-      </div>
-
-      <!-- PAGES GET INJECTED HERE ONCE DATA LOADS -->
-      <div id="pages-root" class="pages-root" hidden></div>
-
-    </main>
-
-    <!-- NAVIGATION -->
-    <nav id="fb-nav" class="fb-nav" aria-label="Guide navigation" hidden>
-      <button id="nav-prev" class="nav-btn nav-btn--prev" type="button" aria-label="Previous page">
-        <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M15 4l-8 8 8 8" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
-        <span>Back</span>
-      </button>
-
-      <div class="fb-nav__progress">
-        <span id="nav-page-label" class="fb-nav__page-label">Page 1 of 1</span>
-        <div class="fb-nav__track" aria-hidden="true">
-          <div id="nav-progress-bar" class="fb-nav__bar"></div>
+      <!-- Footer / navigation, only shown once content has loaded -->
+      <div class="footer hidden" id="footer">
+        <div class="progress-track"><div class="progress-fill" id="progress-fill"></div></div>
+        <div class="nav-row">
+          <button class="nav-btn" id="prev-btn" type="button" aria-label="Previous page">&larr; Prev</button>
+          <span class="page-count" id="page-count">1 of 1</span>
+          <button class="nav-btn" id="next-btn" type="button" aria-label="Next page">Next &rarr;</button>
         </div>
       </div>
 
-      <button id="nav-next" class="nav-btn nav-btn--next" type="button" aria-label="Next page">
-        <span>Next</span>
-        <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M9 4l8 8-8 8" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
-      </button>
-    </nav>
-
+    </div>
   </div>
+</div>
 
-  <!-- Visually-hidden live region announcing page changes to screen readers,
-       kept separate from the visual page content so it doesn't read out the
-       entire page body on every navigation. -->
-  <span id="sr-page-announce" class="sr-only" aria-live="polite"></span>
+<span id="sr-page-announce" class="sr-only" aria-live="polite"></span>
+<div id="measure-rig" aria-hidden="true"></div>
 
-  <script>
+<script>
+/* ============================================================================
+ * CONFIGURATION
+ * Update webAppUrl if the Apps Script deployment URL ever changes.
+ * Set useSampleData to true only for local layout testing; it must be
+ * false for production use so the guide always shows the real sheet data.
+ * ============================================================================ */
+const CONFIG = {
+  webAppUrl: "https://script.google.com/macros/s/AKfycbzGUqWrtCCNS--0J-V_eLIfdhUIdM68zPMKW0RhxiuEUnFgH8cs70ICzZqOZGxqw_6L/exec?sheet=bankRecon",
+  bookTitle: "Practising Bank Reconciliation in Your Demo Account",
+  useSampleData: false,
+  jsonpTimeoutMs: 20000,
+  fetchTimeoutMs: 12000,
+  stageWidth: 1080,
+  stageHeight: 600
+};
 
-(function () {
-  'use strict';
+const SAMPLE_DATA = [
+  {
+    guidance: "Importing a demo bank statement",
+    who: "Any user practising in their demo account.",
+    what: "Uploading a sample bank statement file into the demo ledger.",
+    where: "Accounting > Bank Reconciliation > Import.",
+    when: "Any time before your live go-live date.",
+    why: "So you can see how imports behave before doing this for real.",
+    how: "1. Open the Import screen.\n2. Choose a demo CSV file.\n3. Map the columns.\n4. Confirm the import.\n5. Review the imported lines.",
+    sortOrder: "1", active: "TRUE"
+  },
+  {
+    guidance: "Matching transactions",
+    who: "", what: "Matching bank lines against ledger entries.",
+    where: "Bank Reconciliation screen.", when: "",
+    why: "Confirms the demo ledger reflects the statement correctly.",
+    how: "Select a bank line and its matching ledger entry, then confirm the match.",
+    sortOrder: "2", active: "TRUE"
+  }
+];
 
-  /* ==========================================================================
-     CONFIG — the only bit you should need to touch day-to-day
-     ========================================================================== */
-  var CONFIG = {
-    // Paste your deployed Apps Script Web App /exec URL here.
-    webAppUrl: 'https://script.google.com/macros/s/AKfycbzGUqWrtCCNS--0J-V_eLIfdhUIdM68zPMKW0RhxiuEUnFgH8cs70ICzZqOZGxqw_6L/exec',
-    // Which tab this guide reads from (see apps-script.gs).
-    sheetParam: 'bankRecon',
-    requestTimeoutMs: 12000
-  };
+/* ---------- Utility: escaping (never trust sheet content) ---------- */
+function escapeHtml(str) {
+  return String(str == null ? '' : str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
 
-  // Card fields, in display order, each with its label and CSS accent class.
-  var FIELDS = [
-    { key: 'who', label: 'Who' },
-    { key: 'what', label: 'What' },
-    { key: 'where', label: 'Where' },
-    { key: 'when', label: 'When' },
-    { key: 'why', label: 'Why' },
-    { key: 'how', label: 'How' }
-  ];
+/* Splits raw cell text into paragraphs, preserving blank-line breaks. */
+function splitParagraphs(text) {
+  return String(text || '')
+    .replace(/\r\n/g, '\n')
+    .split(/\n{1,}/)
+    .map(function (p) { return p.trim(); })
+    .filter(Boolean);
+}
 
-  var COVER_TITLE = 'Practising Bank Reconciliation';
-  var COVER_SUBTITLE = 'in Your Demo Account';
-  var COVER_INTRO = 'This guide walks you through safely practising bank imports and reconciliation using your Street demo account, so you can build confidence before working with live client data.';
+// Recognises simple numbered-step patterns ("1.", "1)", "Step 1:") across several lines.
+var STEP_PATTERN = /^\s*(?:step\s*)?\d+[\.\)\:]\s*/i;
+function looksLikeNumberedSteps(paragraphs) {
+  if (paragraphs.length < 2) return false;
+  var matches = 0;
+  paragraphs.forEach(function (p) { if (STEP_PATTERN.test(p)) matches++; });
+  return matches >= Math.ceil(paragraphs.length * 0.6);
+}
+function stripStepMarker(text) { return text.replace(STEP_PATTERN, '').trim(); }
 
-  var CLOSING_TITLE = 'Ready to have a go';
-  var CLOSING_BODY = 'Use your demo account to practise these steps as many times as you like \u2014 nothing here affects live data.';
-  var CLOSING_NOTE = 'Please only practise bank reconciliation in your demo account. If you\u2019re ever unsure, contact your Street Accounting Onboarding team.';
+function fieldBodyHtml(fieldKey, rawText) {
+  var paragraphs = splitParagraphs(rawText);
+  if (fieldKey === 'how' && looksLikeNumberedSteps(paragraphs)) {
+    return '<ol>' + paragraphs.map(function (p) {
+      return '<li>' + escapeHtml(stripStepMarker(p)) + '</li>';
+    }).join('') + '</ol>';
+  }
+  return paragraphs.map(function (p) { return '<p>' + escapeHtml(p) + '</p>'; }).join('');
+}
 
-  /* ==========================================================================
-     DOM REFERENCES
-     ========================================================================== */
-  var el = {};
+/* ============================================================================
+ * DATA NORMALISATION
+ * apps-script.gs already returns clean, already-filtered/sorted objects with
+ * camelCase keys (guidance/who/what/where/when/why/how) — this just guards
+ * against a malformed or unexpected response shape.
+ * ============================================================================ */
+function normaliseResponsePayload(payload) {
+  var list = [];
+  if (Array.isArray(payload)) list = payload;
+  else if (payload && Array.isArray(payload.data)) list = payload.data;
 
-  function cacheDom() {
-    el.viewport = document.getElementById('page-viewport');
-    el.pagesRoot = document.getElementById('pages-root');
-    el.loading = document.getElementById('state-loading');
-    el.error = document.getElementById('state-error');
-    el.errorDetail = document.getElementById('state-error-detail');
-    el.retryBtn = document.getElementById('retry-button');
-    el.nav = document.getElementById('fb-nav');
-    el.navPrev = document.getElementById('nav-prev');
-    el.navNext = document.getElementById('nav-next');
-    el.navLabel = document.getElementById('nav-page-label');
-    el.navBar = document.getElementById('nav-progress-bar');
-    el.srAnnounce = document.getElementById('sr-page-announce');
+  return list.filter(function (r) {
+    if (!r) return false;
+    return !!(r.guidance || r.who || r.what || r.where || r.when || r.why || r.how);
+  });
+}
+
+/**
+ * Turns a raw Code.gs response into a records array, but FIRST checks for
+ * success === false (a real backend error — wrong sheet name, sheet not
+ * found, etc.) and throws a proper error with that message attached, so
+ * the UI can show the real cause instead of a generic "no guidance yet".
+ * Always logs the raw payload too, so anyone debugging can see exactly
+ * what Code.gs returned.
+ */
+function processPayload(payload) {
+  console.log('Bank Reconciliation guide — raw response from Code.gs:', payload);
+
+  if (payload && payload.success === false) {
+    var err = new Error(payload.error || 'The sheet reported an error.');
+    err.isBackendError = true;
+    throw err;
   }
 
-  /* ==========================================================================
-     STATE
-     ========================================================================== */
-  var state = {
-    rawRecords: [],
-    pageModels: [], // ordered list of everything to render: cover, section pages, closing
-    pageEls: [],    // rendered DOM nodes, parallel to pageModels
-    currentIndex: 0
-  };
+  return normaliseResponsePayload(payload);
+}
 
-  /* ==========================================================================
-     TEXT HELPERS
-     ========================================================================== */
+/* ---------- Data loading: fetch first, JSONP fallback ---------- */
 
-  // Splits raw cell text into paragraphs, preserving blank-line breaks from the sheet.
-  function splitParagraphs(text) {
-    return String(text || '')
-      .replace(/\r\n/g, '\n')
-      .split(/\n{1,}/)
-      .map(function (p) { return p.trim(); })
-      .filter(Boolean);
+function loadData() {
+  if (CONFIG.useSampleData) {
+    return Promise.resolve(SAMPLE_DATA);
   }
 
-  // Recognises simple numbered-step patterns ("1.", "1)", "Step 1:") across several lines.
-  var STEP_PATTERN = /^\s*(?:step\s*)?\d+[\.\)\:]\s*/i;
-
-  function looksLikeNumberedSteps(paragraphs) {
-    if (paragraphs.length < 2) return false;
-    var matches = 0;
-    paragraphs.forEach(function (p) { if (STEP_PATTERN.test(p)) matches++; });
-    return matches >= Math.ceil(paragraphs.length * 0.6);
-  }
-
-  function stripStepMarker(text) {
-    return text.replace(STEP_PATTERN, '').trim();
-  }
-
-  /* ==========================================================================
-     DOM BUILDERS (textContent only \u2014 never innerHTML with sheet data,
-     so unexpected characters can never break the page)
-     ========================================================================== */
-
-  function createCardNode(fieldKey, label, rawContent) {
-    var paragraphs = splitParagraphs(rawContent);
-    if (!paragraphs.length) return null; // never render an empty card
-
-    var card = document.createElement('div');
-    card.className = 'card card--' + fieldKey;
-
-    var labelRow = document.createElement('div');
-    labelRow.className = 'card__label';
-    var dot = document.createElement('span');
-    dot.className = 'card__label-dot';
-    dot.setAttribute('aria-hidden', 'true');
-    var labelText = document.createElement('span');
-    labelText.textContent = label;
-    labelRow.appendChild(dot);
-    labelRow.appendChild(labelText);
-    card.appendChild(labelRow);
-
-    var body = document.createElement('div');
-    body.className = 'card__body';
-
-    if (fieldKey === 'how' && looksLikeNumberedSteps(paragraphs)) {
-      var ol = document.createElement('ol');
-      paragraphs.forEach(function (p) {
-        var li = document.createElement('li');
-        li.textContent = stripStepMarker(p);
-        ol.appendChild(li);
-      });
-      body.appendChild(ol);
-    } else {
-      paragraphs.forEach(function (p) {
-        var pEl = document.createElement('p');
-        pEl.textContent = p;
-        body.appendChild(pEl);
-      });
-    }
-
-    card.appendChild(body);
-    return card;
-  }
-
-  function createTitleNode(titleText, continued) {
-    var wrap = document.createElement('div');
-    wrap.className = 'section-intro-space';
-
-    if (continued) {
-      var badge = document.createElement('span');
-      badge.className = 'section-continued';
-      badge.textContent = 'Continued';
-      wrap.appendChild(document.createElement('br'));
-      wrap.insertBefore(badge, wrap.firstChild);
-    }
-
-    var h = document.createElement('h2');
-    h.className = 'section-title';
-    h.textContent = titleText || 'Guidance';
-    wrap.appendChild(h);
-
-    return wrap;
-  }
-
-  function createCardGrid(cardNodes, twoCol) {
-    var grid = document.createElement('div');
-    grid.className = 'card-grid' + (twoCol ? ' card-grid--two-col' : '');
-    cardNodes.forEach(function (c) { grid.appendChild(c); });
-    return grid;
-  }
-
-  /* ==========================================================================
-     DATA -> SECTIONS
-     ========================================================================== */
-
-  function buildSections(records) {
-    var sections = [];
-    records.forEach(function (record) {
-      var cardData = [];
-      FIELDS.forEach(function (f) {
-        var val = record[f.key];
-        if (val && String(val).trim()) {
-          cardData.push({ key: f.key, label: f.label, text: val });
-        }
-      });
-      var title = (record.guidance || '').toString().trim();
-      if (!title && !cardData.length) return; // fully blank, ignore
-      sections.push({ title: title || 'Guidance', cards: cardData });
+  return fetchWithTimeout(CONFIG.webAppUrl, CONFIG.fetchTimeoutMs)
+    .then(processPayload)
+    .catch(function (fetchErr) {
+      if (fetchErr && fetchErr.isBackendError) throw fetchErr;
+      console.warn('fetch() failed, falling back to JSONP:', fetchErr);
+      return loadViaJsonp(CONFIG.webAppUrl, CONFIG.jsonpTimeoutMs)
+        .then(processPayload);
     });
-    return sections;
-  }
+}
 
-  /* ==========================================================================
-     MEASUREMENT RIG
-     A hidden .page (same class as every real page, so identical box model,
-     padding, fonts and flex behaviour) used purely to test whether a
-     candidate arrangement of nodes fits before it is committed to a page.
-     ========================================================================== */
+function fetchWithTimeout(url, timeoutMs) {
+  const controller = new AbortController();
+  const timer = setTimeout(function () { controller.abort(); }, timeoutMs);
+  return fetch(url, { signal: controller.signal, cache: 'no-store' })
+    .then(function (res) {
+      clearTimeout(timer);
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      return res.json();
+    })
+    .catch(function (err) {
+      clearTimeout(timer);
+      throw err;
+    });
+}
 
-  var rig = null;
+function loadViaJsonp(url, timeoutMs) {
+  return new Promise(function (resolve, reject) {
+    const cbName = '__flipbookCb' + Math.random().toString(36).slice(2);
+    const script = document.createElement('script');
+    let settled = false;
 
-  function ensureRig() {
-    if (rig) return rig;
-    var page = document.createElement('div');
-    page.className = 'page';
-    page.style.zIndex = '-1';
-    var inner = document.createElement('div');
-    inner.className = 'page-inner';
-    page.appendChild(inner);
-    el.pagesRoot.appendChild(page);
-    rig = { page: page, inner: inner };
-    return rig;
-  }
+    const cleanup = function () {
+      // Replaced with a no-op rather than deleted: if the response arrives
+      // late (after we've already timed out and moved on), it calls a
+      // harmless function instead of throwing a ReferenceError.
+      window[cbName] = function () {};
+      if (script.parentNode) script.parentNode.removeChild(script);
+      clearTimeout(timer);
+    };
 
-  // Returns true if the given content (already-built DOM nodes) fits within
-  // one page's real, currently-rendered available height.
-  function contentFits(nodes, compact) {
-    var r = ensureRig();
-    r.inner.className = 'page-inner' + (compact ? ' page-inner--compact' : '');
-    r.inner.innerHTML = '';
-    nodes.forEach(function (n) { r.inner.appendChild(n); });
-    // Force layout before reading measurements.
-    // eslint-disable-next-line no-unused-expressions
-    r.inner.offsetHeight;
-    return r.inner.scrollHeight <= r.inner.clientHeight + 1;
-  }
+    const timer = setTimeout(function () {
+      if (settled) return;
+      settled = true;
+      cleanup();
+      reject(new Error('JSONP request timed out'));
+    }, timeoutMs);
 
-  /* ==========================================================================
-     PAGINATION
-     Greedily fills each page with as many whole cards as will fit, testing a
-     two-column layout (denser, better balance for shorter content) and a
-     one-column layout (better for longer content), and only spills onto a
-     continuation page ("Continued") when content genuinely doesn't fit.
-     ========================================================================== */
+    window[cbName] = function (payload) {
+      if (settled) return;
+      settled = true;
+      cleanup();
+      resolve(payload);
+    };
 
-  function buildCandidateNodes(title, continued, cardDataSlice, twoCol) {
-    var nodes = [createTitleNode(title, continued)];
-    var cardNodes = cardDataSlice
-      .map(function (c) { return createCardNode(c.key, c.label, c.text); })
-      .filter(Boolean);
-    nodes.push(createCardGrid(cardNodes, twoCol));
-    return nodes;
-  }
+    script.onerror = function () {
+      if (settled) return;
+      settled = true;
+      cleanup();
+      reject(new Error('JSONP script failed to load'));
+    };
 
-  function paginateSection(section) {
-    var pages = [];
-    var remaining = section.cards.slice();
+    const sep = url.indexOf('?') === -1 ? '?' : '&';
+    script.src = url + sep + 'callback=' + cbName;
+    document.body.appendChild(script);
+  });
+}
+
+/* ============================================================================
+ * ICONS (inline SVG, decorative -> aria-hidden) — the same set used on the
+ * Rules & Conditions guide, so iconography reads consistently across guides.
+ * ============================================================================ */
+const ICONS = {
+  who: '<svg class="ic" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z" stroke="currentColor" stroke-width="1.6"/><path d="M4 20c1.2-3.6 4.2-5.5 8-5.5s6.8 1.9 8 5.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>',
+  what: '<svg class="ic" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M5 12.5 9 16.5 19 6.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+  where: '<svg class="ic" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 21s7-6.1 7-11.2A7 7 0 0 0 5 9.8C5 14.9 12 21 12 21Z" stroke="currentColor" stroke-width="1.6"/><circle cx="12" cy="9.5" r="2.2" stroke="currentColor" stroke-width="1.6"/></svg>',
+  when: '<svg class="ic" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="8" stroke="currentColor" stroke-width="1.6"/><path d="M12 8v4.5l3 2" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>',
+  why: '<svg class="ic" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M9 18h6M10 21h4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><path d="M12 3a6 6 0 0 0-3.5 10.9c.6.5 1 1.2 1 2v.1h5v-.1c0-.8.4-1.5 1-2A6 6 0 0 0 12 3Z" stroke="currentColor" stroke-width="1.6"/></svg>',
+  how: '<svg class="ic" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4 12h11M11 6l6 6-6 6" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+  warning: '<svg class="ic" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 3.5 21 20H3L12 3.5Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M12 10v4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><circle cx="12" cy="16.7" r="0.9" fill="currentColor"/></svg>'
+};
+
+const FIELD_ORDER = ['who', 'what', 'where', 'when', 'why', 'how'];
+const FIELD_LABELS = { who: 'Who', what: 'What', where: 'Where', when: 'When', why: 'Why', how: 'How' };
+
+/* ============================================================================
+ * PAGE BUILDING (landscape layouts)
+ * ============================================================================ */
+
+function buildCoverPageHtml() {
+  return (
+    '<div class="cover-flex">' +
+      '<div class="cover-left">' +
+        '<div class="cover-word">STREET<span>.</span></div>' +
+        '<div class="eyebrow" style="margin-top:16px;">ACCOUNTING ONBOARDING GUIDE</div>' +
+        '<h1 class="page-title">Practising Bank Reconciliation in Your Demo Account</h1>' +
+        '<p class="lede">This guide walks you through safely practising bank imports and reconciliation using your Street demo account, so you can build confidence before working with live client data.</p>' +
+        '<div class="cover-callout">Nothing you do here affects live data — it&rsquo;s completely safe to repeat as many times as you like.</div>' +
+        '<div class="cover-pill-row">' +
+          '<span class="cover-pill">Demo account only</span>' +
+          '<span class="cover-pill">Safe to repeat</span>' +
+          '<span class="cover-pill">Step-by-step</span>' +
+        '</div>' +
+        '<div class="cover-cta">Tap or press Next to begin &rarr;</div>' +
+      '</div>' +
+    '</div>'
+  );
+}
+
+function buildFieldBlockHtml(fieldKey, rawText) {
+  const isHow = fieldKey === 'how';
+  return (
+    '<div class="field-block' + (isHow ? ' field-how' : '') + '">' +
+      '<div class="fk">' + ICONS[fieldKey] + '<span>' + FIELD_LABELS[fieldKey] + '</span></div>' +
+      '<div class="field-block-body">' + fieldBodyHtml(fieldKey, rawText) + '</div>' +
+    '</div>'
+  );
+}
+
+function buildGuidancePageHtml(record, recordIndex, totalRecords, fieldsSubset, continued, useSingleColumn) {
+  const eyebrowText = 'GUIDANCE ' + (recordIndex + 1) + ' of ' + totalRecords + (continued ? ' \u00b7 CONTINUED' : '');
+  const gridClass = 'fields-grid' + (useSingleColumn ? ' single-col' : '');
+  const fieldsHtml = fieldsSubset.map(function (f) { return buildFieldBlockHtml(f, record[f]); }).join('');
+
+  return (
+    '<div class="eyebrow">' + eyebrowText + '</div>' +
+    '<h1 class="page-title">' + escapeHtml(record.guidance || 'Guidance') + '</h1>' +
+    '<div class="' + gridClass + '">' + fieldsHtml + '</div>'
+  );
+}
+
+function buildFinalPageHtml() {
+  return (
+    '<div class="final-flex">' +
+      '<div class="final-left">' +
+        '<div class="eyebrow">FINAL PAGE</div>' +
+        '<h1 class="page-title">Ready to have a go</h1>' +
+        '<p class="final-copy">Use your demo account to practise these steps as many times as you like \u2014 nothing here affects live data.</p>' +
+        '<div class="final-note">' + ICONS.warning + ' Please only practise bank reconciliation in your demo account. If you\u2019re ever unsure, contact your Street Accounting Onboarding team.</div>' +
+      '</div>' +
+      '<div class="final-right">' +
+        '<div class="word">STREET.</div>' +
+        '<button class="restart-btn" id="restart-btn" type="button">Restart guide</button>' +
+      '</div>' +
+    '</div>'
+  );
+}
+
+/**
+ * Measures the ACTUAL rendered height of the footer, by cloning real markup
+ * into the (unscaled, off-screen) measuring rig. Far more reliable than a
+ * hard-coded pixel guess.
+ */
+function measureChromeHeights() {
+  const rig = document.getElementById('measure-rig');
+  rig.innerHTML = '';
+  rig.style.width = CONFIG.stageWidth + 'px';
+
+  const footerClone = document.getElementById('footer').cloneNode(true);
+  footerClone.classList.remove('hidden');
+  footerClone.style.position = 'static';
+  rig.appendChild(footerClone);
+  const footerHeight = footerClone.offsetHeight;
+  rig.removeChild(footerClone);
+
+  return { footerHeight: footerHeight };
+}
+
+/* ============================================================================
+ * PAGINATION
+ * Each guidance record gets its own page: eyebrow + title + a grid of field
+ * blocks (Who/What/Where/When/Why/How, only the populated ones). Content is
+ * measured for real in the off-screen rig — never assumed — so a page only
+ * ever holds as many fields as truly fit, and long records spill onto a
+ * "Continued" page automatically rather than ever needing a scrollbar.
+ * ============================================================================ */
+function paginateGuidance(records, availableHeight, gridWidth) {
+  const rig = document.getElementById('measure-rig');
+  const pages = []; // array of { recordIndex, fieldsSubset, continued, singleCol }
+
+  records.forEach(function (record, recordIndex) {
+    const allFields = FIELD_ORDER.filter(function (f) { return record[f] && String(record[f]).trim(); });
+    let remaining = allFields.slice();
+    let continued = false;
+
+    function measure(fieldsSubset, singleCol) {
+      rig.style.width = gridWidth + 'px';
+      const wrapper = document.createElement('div');
+      wrapper.innerHTML = buildGuidancePageHtml(record, recordIndex, records.length, fieldsSubset, continued, singleCol);
+      rig.appendChild(wrapper);
+      const height = wrapper.offsetHeight + 10; // small buffer for sub-pixel/rendering rounding
+      rig.removeChild(wrapper);
+      return height;
+    }
 
     while (remaining.length) {
-      var continued = pages.length > 0;
-      var bestN = 0;
-      var bestLayout = 'one-col';
-      var bestCompact = false;
+      let bestN = 0;
+      let bestSingleCol = true;
 
-      // Try to fit as many cards as possible, from all-remaining down to 1.
       outer:
-      for (var n = remaining.length; n >= 1; n--) {
-        var slice = remaining.slice(0, n);
-        var fitsOneCol = contentFits(buildCandidateNodes(section.title, continued, slice, false), false);
-        var fitsTwoCol = n >= 2 && contentFits(buildCandidateNodes(section.title, continued, slice, true), false);
-
-        if (fitsOneCol || fitsTwoCol) {
+      for (let n = remaining.length; n >= 1; n--) {
+        const slice = remaining.slice(0, n);
+        const twoColFits = n >= 2 && measure(slice, false) <= availableHeight;
+        const oneColFits = measure(slice, true) <= availableHeight;
+        if (twoColFits || oneColFits) {
           bestN = n;
-          // Prefer the two-column layout when it fits 2+ cards \u2014 it reads
-          // more balanced and avoids a lone card stranded on an empty page.
-          bestLayout = fitsTwoCol ? 'two-col' : 'one-col';
-          bestCompact = false;
+          // Prefer two columns when it fits 2+ fields — reads more balanced
+          // and makes better use of the extra landscape width.
+          bestSingleCol = !twoColFits;
           break outer;
         }
       }
 
       if (bestN === 0) {
-        // Even a single card doesn't fit at normal size (an unusually long
-        // guidance entry). Fall back to a slightly more compact type scale
-        // before accepting it as-is, rather than ever adding a scrollbar.
-        var singleSlice = remaining.slice(0, 1);
-        var compactFits = contentFits(buildCandidateNodes(section.title, continued, singleSlice, false), true);
+        // Even a single field doesn't fit at normal size (an unusually long
+        // entry) — render it alone anyway rather than lose the content.
+        console.warn('Bank Recon guide: a single field could not be made to fit on one page — rendering it anyway.', record.guidance, remaining[0]);
         bestN = 1;
-        bestLayout = 'one-col';
-        bestCompact = true;
-        if (!compactFits) {
-          console.warn('Bank Recon guide: a single card could not be made to fit even in compact mode \u2014 rendering it anyway to avoid data loss.', section.title);
-        }
+        bestSingleCol = true;
       }
 
-      var committed = remaining.slice(0, bestN);
+      const committed = remaining.slice(0, bestN);
       remaining = remaining.slice(bestN);
 
       pages.push({
-        type: 'section',
-        title: section.title,
+        recordIndex: recordIndex,
+        totalRecords: records.length,
+        fieldsSubset: committed,
         continued: continued,
-        cards: committed,
-        twoCol: bestLayout === 'two-col',
-        compact: bestCompact
+        singleCol: bestSingleCol
       });
+
+      continued = true; // any further page for this record is a continuation
     }
+  });
 
-    return pages;
+  return pages;
+}
+
+/* ============================================================================
+ * APP STATE + RENDERING
+ * ============================================================================ */
+let PAGES = []; // array of { type, html } — 'cover' | 'guidance' | 'final'
+let currentIndex = 0;
+
+function renderAllPages() {
+  const host = document.getElementById('pages-host');
+  host.innerHTML = '';
+  PAGES.forEach(function (p, i) {
+    const div = document.createElement('div');
+    div.className = 'page' + (i === 0 ? ' active' : '');
+    div.setAttribute('data-index', i);
+    div.setAttribute('role', 'group');
+    div.setAttribute('aria-roledescription', 'page');
+    div.setAttribute('aria-label', 'Page ' + (i + 1) + ' of ' + PAGES.length);
+    div.innerHTML = p.html;
+    host.appendChild(div);
+  });
+}
+
+function goToPage(index) {
+  if (index < 0 || index >= PAGES.length) return;
+  const pages = document.querySelectorAll('.page');
+  pages.forEach(function (el, i) {
+    el.classList.remove('active', 'exit-left');
+    if (i === index) el.classList.add('active');
+    else if (i < index) el.classList.add('exit-left');
+  });
+  currentIndex = index;
+  updateFooter();
+}
+
+function updateFooter() {
+  document.getElementById('page-count').textContent = (currentIndex + 1) + ' of ' + PAGES.length;
+  document.getElementById('progress-fill').style.width = (((currentIndex + 1) / PAGES.length) * 100) + '%';
+  document.getElementById('prev-btn').disabled = currentIndex === 0;
+  document.getElementById('next-btn').disabled = currentIndex === PAGES.length - 1;
+  const announce = document.getElementById('sr-page-announce');
+  if (announce) announce.textContent = 'Page ' + (currentIndex + 1) + ' of ' + PAGES.length;
+}
+
+function attachNav() {
+  document.getElementById('prev-btn').addEventListener('click', function () { goToPage(currentIndex - 1); });
+  document.getElementById('next-btn').addEventListener('click', function () { goToPage(currentIndex + 1); });
+
+  document.addEventListener('keydown', function (e) {
+    if (document.getElementById('footer').classList.contains('hidden')) return;
+    if (e.key === 'ArrowRight') goToPage(currentIndex + 1);
+    if (e.key === 'ArrowLeft') goToPage(currentIndex - 1);
+  });
+
+  let touchStartX = null;
+  const viewport = document.getElementById('viewport');
+  viewport.addEventListener('touchstart', function (e) { touchStartX = e.changedTouches[0].clientX; }, { passive: true });
+  viewport.addEventListener('touchend', function (e) {
+    if (touchStartX === null) return;
+    const dx = e.changedTouches[0].clientX - touchStartX;
+    if (Math.abs(dx) > 40) { dx < 0 ? goToPage(currentIndex + 1) : goToPage(currentIndex - 1); }
+    touchStartX = null;
+  }, { passive: true });
+
+  document.getElementById('pages-host').addEventListener('click', function (e) {
+    if (e.target && e.target.id === 'restart-btn') goToPage(0);
+  });
+}
+
+function showError(message) {
+  document.getElementById('state-loading').classList.add('hidden');
+  document.getElementById('state-error').classList.remove('hidden');
+  document.getElementById('error-copy').textContent = message;
+}
+
+/* ============================================================================
+ * STAGE SCALING
+ * The shell's on-screen size is decided entirely by CSS (min()/aspect-ratio
+ * on .flipbook-shell guarantees a landscape 1080:600 box regardless of
+ * viewport). This JS just watches that box with a ResizeObserver and scales
+ * the fixed-size 1080x600 .stage to match, so pagination measurements never
+ * need to account for the device at all — .stage is always 1080x600 pre-scale.
+ * ============================================================================ */
+function scaleStageToShell() {
+  const shell = document.getElementById('shell');
+  const stage = document.getElementById('stage');
+  const scale = shell.clientWidth / CONFIG.stageWidth;
+  stage.style.transform = 'scale(' + scale + ')';
+}
+
+function init() {
+  const shell = document.getElementById('shell');
+  scaleStageToShell();
+
+  if (window.ResizeObserver) {
+    new ResizeObserver(scaleStageToShell).observe(shell);
+  } else {
+    window.addEventListener('resize', scaleStageToShell);
+    window.addEventListener('orientationchange', scaleStageToShell);
   }
 
-  function paginateAll(sections) {
-    var models = [{ type: 'cover' }];
-    sections.forEach(function (section) {
-      paginateSection(section).forEach(function (p) { models.push(p); });
-    });
-    models.push({ type: 'closing' });
-    return models;
-  }
+  attachNav();
+  document.getElementById('retry-btn').addEventListener('click', function () {
+    document.getElementById('state-error').classList.add('hidden');
+    document.getElementById('state-loading').classList.remove('hidden');
+    boot();
+  });
+  boot();
+}
 
-  /* ==========================================================================
-     PAGE RENDERING
-     ========================================================================== */
+function boot() {
+  loadData()
+    .then(function (records) {
+      // Wait for the DM Sans web font to actually finish loading before we
+      // measure anything, so text doesn't wrap differently once the web
+      // font swaps in a moment after the fallback system font first shows.
+      const fontsReady = (document.fonts && document.fonts.ready) ? document.fonts.ready : Promise.resolve();
+      return fontsReady.then(function () { return records; });
+    })
+    .then(function (records) {
+      if (!records.length) {
+        showError('No active guidance was found in the sheet yet. Please check back shortly, or contact the Street team.');
+        return;
+      }
 
-  function renderCoverPage() {
-    var inner = document.createElement('div');
-    inner.className = 'page-inner';
+      const chrome = measureChromeHeights();
+      const PAGE_PADDING_TOP = 30;
+      const PAGE_PADDING_BOTTOM = 12;
+      const SAFETY_MARGIN = 20;
+      const availableHeight = CONFIG.stageHeight - chrome.footerHeight - PAGE_PADDING_TOP - PAGE_PADDING_BOTTOM - SAFETY_MARGIN;
+      const gridWidth = CONFIG.stageWidth - (46 * 2); // matches .page horizontal padding
 
-    var page = document.createElement('div');
-    page.className = 'cover-page';
+      const guidancePages = paginateGuidance(records, availableHeight, gridWidth);
 
-    var swatch = document.createElement('div');
-    swatch.className = 'cover-page__swatch';
-    page.appendChild(swatch);
+      PAGES = [{ type: 'cover', html: buildCoverPageHtml() }];
+      guidancePages.forEach(function (gp) {
+        PAGES.push({
+          type: 'guidance',
+          html: buildGuidancePageHtml(records[gp.recordIndex], gp.recordIndex, gp.totalRecords, gp.fieldsSubset, gp.continued, gp.singleCol)
+        });
+      });
+      PAGES.push({ type: 'final', html: buildFinalPageHtml() });
 
-    var eyebrow = document.createElement('span');
-    eyebrow.className = 'cover-page__eyebrow';
-    eyebrow.textContent = 'Accounting onboarding guide';
-    page.appendChild(eyebrow);
-
-    var h1 = document.createElement('h1');
-    h1.className = 'cover-page__title';
-    h1.textContent = COVER_TITLE + ' ' + COVER_SUBTITLE;
-    page.appendChild(h1);
-
-    var intro = document.createElement('p');
-    intro.className = 'cover-page__intro';
-    intro.textContent = COVER_INTRO;
-    page.appendChild(intro);
-
-    var pillRow = document.createElement('div');
-    pillRow.className = 'cover-page__pill-row';
-    ['Demo account only', 'Safe to repeat', 'Step-by-step'].forEach(function (t) {
-      var pill = document.createElement('span');
-      pill.className = 'cover-page__pill';
-      pill.textContent = t;
-      pillRow.appendChild(pill);
-    });
-    page.appendChild(pillRow);
-
-    inner.appendChild(page);
-    return wrapPage(inner);
-  }
-
-  function renderClosingPage() {
-    var inner = document.createElement('div');
-    inner.className = 'page-inner';
-
-    var page = document.createElement('div');
-    page.className = 'closing-page';
-
-    var h2 = document.createElement('h2');
-    h2.className = 'closing-page__title';
-    h2.textContent = CLOSING_TITLE;
-    page.appendChild(h2);
-
-    var body = document.createElement('p');
-    body.className = 'closing-page__body';
-    body.textContent = CLOSING_BODY;
-    page.appendChild(body);
-
-    var note = document.createElement('div');
-    note.className = 'closing-page__note';
-    note.textContent = CLOSING_NOTE;
-    page.appendChild(note);
-
-    inner.appendChild(page);
-    return wrapPage(inner);
-  }
-
-  function renderSectionPage(model) {
-    var inner = document.createElement('div');
-    inner.className = 'page-inner' + (model.compact ? ' page-inner--compact' : '');
-
-    inner.appendChild(createTitleNode(model.title, model.continued));
-
-    var cardNodes = model.cards
-      .map(function (c) { return createCardNode(c.key, c.label, c.text); })
-      .filter(Boolean);
-    inner.appendChild(createCardGrid(cardNodes, model.twoCol));
-
-    return wrapPage(inner);
-  }
-
-  function wrapPage(innerEl) {
-    var page = document.createElement('div');
-    page.className = 'page';
-    page.appendChild(innerEl);
-    return page;
-  }
-
-  function renderAllPages() {
-    state.pageEls = state.pageModels.map(function (model) {
-      if (model.type === 'cover') return renderCoverPage();
-      if (model.type === 'closing') return renderClosingPage();
-      return renderSectionPage(model);
-    });
-
-    // Clear out everything (including the measurement rig) and mount the
-    // final pages fresh.
-    el.pagesRoot.innerHTML = '';
-    rig = null;
-    state.pageEls.forEach(function (p) { el.pagesRoot.appendChild(p); });
-  }
-
-  /* ==========================================================================
-     NAVIGATION
-     ========================================================================== */
-
-  function goToPage(index, direction) {
-    var total = state.pageEls.length;
-    if (index < 0 || index >= total) return;
-
-    state.pageEls.forEach(function (p, i) {
-      p.classList.remove('is-active', 'is-leaving-back');
-      if (i === index) {
-        p.classList.add('is-active');
-      } else if (direction === 'back' && i === state.currentIndex) {
-        p.classList.add('is-leaving-back');
+      renderAllPages();
+      document.getElementById('state-loading').classList.add('hidden');
+      document.getElementById('footer').classList.remove('hidden');
+      updateFooter();
+    })
+    .catch(function (err) {
+      console.error('Failed to load bank reconciliation guidance:', err);
+      if (err && err.isBackendError) {
+        // A real Code.gs error (wrong sheet name, sheet not found, etc.) — show it directly, it's actionable.
+        showError(err.message);
+      } else {
+        showError('We couldn\'t load this guide right now. Please check your connection and try again.');
       }
     });
+}
 
-    state.currentIndex = index;
-    updateNavUI();
-  }
-
-  function updateNavUI() {
-    var total = state.pageEls.length;
-    var current = state.currentIndex + 1;
-    el.navLabel.textContent = current + ' of ' + total;
-    el.navBar.style.width = (current / total * 100) + '%';
-    el.navPrev.disabled = state.currentIndex === 0;
-    el.navNext.disabled = state.currentIndex === total - 1;
-    if (el.srAnnounce) el.srAnnounce.textContent = 'Page ' + current + ' of ' + total;
-  }
-
-  function next() {
-    if (state.currentIndex < state.pageEls.length - 1) goToPage(state.currentIndex + 1, 'forward');
-  }
-
-  function prev() {
-    if (state.currentIndex > 0) goToPage(state.currentIndex - 1, 'back');
-  }
-
-  function bindNavEvents() {
-    el.navNext.addEventListener('click', next);
-    el.navPrev.addEventListener('click', prev);
-
-    document.addEventListener('keydown', function (e) {
-      if (el.nav.hidden) return;
-      if (e.key === 'ArrowRight') { next(); }
-      else if (e.key === 'ArrowLeft') { prev(); }
-    });
-
-    var touchStartX = null;
-    el.viewport.addEventListener('touchstart', function (e) {
-      touchStartX = e.changedTouches[0].clientX;
-    }, { passive: true });
-    el.viewport.addEventListener('touchend', function (e) {
-      if (touchStartX === null) return;
-      var dx = e.changedTouches[0].clientX - touchStartX;
-      touchStartX = null;
-      if (Math.abs(dx) < 40) return;
-      if (dx < 0) next(); else prev();
-    }, { passive: true });
-  }
-
-  /* ==========================================================================
-     RECALCULATION (resize / font changes)
-     ========================================================================== */
-
-  var recalcTimer = null;
-  function scheduleRecalc() {
-    clearTimeout(recalcTimer);
-    recalcTimer = setTimeout(function () {
-      if (!state.rawRecords.length) return;
-      var sections = buildSections(state.rawRecords);
-      state.pageModels = paginateAll(sections);
-      renderAllPages();
-      var clamped = Math.min(state.currentIndex, state.pageEls.length - 1);
-      goToPage(Math.max(clamped, 0));
-    }, 200);
-  }
-
-  window.addEventListener('resize', scheduleRecalc);
-  if (document.fonts && document.fonts.ready) {
-    document.fonts.ready.then(scheduleRecalc)['catch'](function () {});
-  }
-
-  /* ==========================================================================
-     STATE SCREENS
-     ========================================================================== */
-
-  function showLoading() {
-    el.loading.hidden = false;
-    el.error.hidden = true;
-    el.pagesRoot.hidden = true;
-    el.nav.hidden = true;
-  }
-
-  function showError(message) {
-    el.loading.hidden = true;
-    el.error.hidden = false;
-    el.pagesRoot.hidden = true;
-    el.nav.hidden = true;
-    el.errorDetail.textContent = message;
-  }
-
-  function showGuide() {
-    el.loading.hidden = true;
-    el.error.hidden = true;
-    el.pagesRoot.hidden = false;
-    el.nav.hidden = false;
-  }
-
-  /* ==========================================================================
-     DATA LOADING (JSONP \u2014 avoids cross-origin issues with the Apps
-     Script /exec endpoint when called from a GitHub Pages origin)
-     ========================================================================== */
-
-  function loadData() {
-    showLoading();
-
-    if (!CONFIG.webAppUrl || CONFIG.webAppUrl.indexOf('PASTE_YOUR') === 0) {
-      console.error('Bank Recon guide: CONFIG.webAppUrl has not been set in script.js.');
-      showError('This guide isn\u2019t connected to its data source yet.');
-      return;
-    }
-
-    var callbackName = 'bankReconCb_' + Date.now() + '_' + Math.floor(Math.random() * 10000);
-    var finished = false;
-    var scriptEl = null;
-
-    function cleanup() {
-      delete window[callbackName];
-      if (scriptEl && scriptEl.parentNode) scriptEl.parentNode.removeChild(scriptEl);
-    }
-
-    var timeoutId = setTimeout(function () {
-      if (finished) return;
-      finished = true;
-      cleanup();
-      console.error('Bank Recon guide: request to Apps Script timed out.');
-      showError('This is taking longer than expected. Please check your connection and try again.');
-    }, CONFIG.requestTimeoutMs);
-
-    window[callbackName] = function (payload) {
-      if (finished) return;
-      finished = true;
-      clearTimeout(timeoutId);
-      cleanup();
-      handlePayload(payload);
-    };
-
-    scriptEl = document.createElement('script');
-    var sep = CONFIG.webAppUrl.indexOf('?') > -1 ? '&' : '?';
-    scriptEl.src = CONFIG.webAppUrl + sep + 'sheet=' + encodeURIComponent(CONFIG.sheetParam) + '&callback=' + callbackName;
-    scriptEl.onerror = function () {
-      if (finished) return;
-      finished = true;
-      clearTimeout(timeoutId);
-      cleanup();
-      console.error('Bank Recon guide: the Apps Script request failed to load (network or deployment issue).');
-      showError('Could not reach the guide data. Please check your connection and try again.');
-    };
-    document.body.appendChild(scriptEl);
-  }
-
-  function handlePayload(payload) {
-    if (!payload || payload.success !== true || !Array.isArray(payload.data)) {
-      console.error('Bank Recon guide: Apps Script returned an unexpected or unsuccessful response.', payload);
-      showError((payload && payload.error) || 'No guidance data is available right now.');
-      return;
-    }
-
-    var sections = buildSections(payload.data);
-    if (!sections.length) {
-      console.error('Bank Recon guide: no active rows were returned.', payload);
-      showError('No active guidance is available right now. Please check back later.');
-      return;
-    }
-
-    state.rawRecords = payload.data;
-    state.pageModels = paginateAll(sections);
-    renderAllPages();
-    showGuide();
-    goToPage(0);
-  }
-
-  /* ==========================================================================
-     INIT
-     ========================================================================== */
-
-  function init() {
-    cacheDom();
-    bindNavEvents();
-    el.retryBtn.addEventListener('click', loadData);
-    loadData();
-  }
-
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', init);
-  } else {
-    init();
-  }
-})();
-
+document.addEventListener('DOMContentLoaded', init);
 
 </script>
 </body>
