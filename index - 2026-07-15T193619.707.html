@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+<title>Practising Bank Reconciliation in Your Demo Account</title>
+<link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+
+  <div id="flip-canvas" class="flip-canvas">
+
+    <!-- HEADER -->
+    <header class="fb-header">
+      <div class="fb-header__title">Practising Bank Reconciliation<span class="fb-header__title-sub">in Your Demo Account</span></div>
+    </header>
+
+    <!-- PAGE VIEWPORT -->
+    <main id="page-viewport" class="page-viewport">
+
+      <!-- LOADING STATE -->
+      <div id="state-loading" class="state-screen" role="status">
+        <div class="spinner" aria-hidden="true"></div>
+        <p>Loading your guide&hellip;</p>
+      </div>
+
+      <!-- ERROR STATE -->
+      <div id="state-error" class="state-screen state-screen--error" hidden>
+        <p class="state-screen__icon" aria-hidden="true">&#9888;</p>
+        <p class="state-screen__title">We couldn&rsquo;t load this guide</p>
+        <p id="state-error-detail" class="state-screen__detail">Please check your connection and try again.</p>
+        <button id="retry-button" class="btn btn--primary" type="button">Try again</button>
+      </div>
+
+      <!-- PAGES GET INJECTED HERE ONCE DATA LOADS -->
+      <div id="pages-root" class="pages-root" hidden></div>
+
+    </main>
+
+    <!-- NAVIGATION -->
+    <nav id="fb-nav" class="fb-nav" aria-label="Guide navigation" hidden>
+      <button id="nav-prev" class="nav-btn nav-btn--prev" type="button" aria-label="Previous page">
+        <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M15 4l-8 8 8 8" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <span>Back</span>
+      </button>
+
+      <div class="fb-nav__progress">
+        <span id="nav-page-label" class="fb-nav__page-label">Page 1 of 1</span>
+        <div class="fb-nav__track" aria-hidden="true">
+          <div id="nav-progress-bar" class="fb-nav__bar"></div>
+        </div>
+      </div>
+
+      <button id="nav-next" class="nav-btn nav-btn--next" type="button" aria-label="Next page">
+        <span>Next</span>
+        <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M9 4l8 8-8 8" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+    </nav>
+
+  </div>
+
+  <!-- Visually-hidden live region announcing page changes to screen readers,
+       kept separate from the visual page content so it doesn't read out the
+       entire page body on every navigation. -->
+  <span id="sr-page-announce" class="sr-only" aria-live="polite"></span>
+
+  <script src="script.js"></script>
+</body>
+</html>
